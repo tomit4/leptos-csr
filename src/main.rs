@@ -12,6 +12,12 @@ use std::num::ParseIntError;
 /* Mutating Data with Actions
  * https://book.leptos.dev/async/13_actions.html */
 
+/* Projecting Children
+ * https://book.leptos.dev/interlude_projecting_children.html */
+
+/* Global State
+ * https://book.leptos.dev/15_global_state.html */
+
 async fn load_data(value: i32) -> i32 {
     TimeoutFuture::new(1_000).await;
     value
