@@ -1,3 +1,4 @@
+use gloo_timers::future::TimeoutFuture;
 use leptos::*;
 use std::marker::PhantomData;
 use std::num::ParseIntError;
@@ -7,6 +8,41 @@ use std::num::ParseIntError;
 
 /* Dynamic Rendering with the <For/> Component,
  * see: https://book.leptos.dev/view/04_iteration.html#dynamic-rendering-with-the-for-component */
+
+/* Mutating Data with Actions
+ * https://book.leptos.dev/async/13_actions.html */
+
+async fn load_data(value: i32) -> i32 {
+    TimeoutFuture::new(1_000).await;
+    value
+}
+
+async fn load_a(value: i32) -> i32 {
+    TimeoutFuture::new(1_000).await;
+    value
+}
+
+async fn load_b(value: i32) -> i32 {
+    TimeoutFuture::new(1_000).await;
+    value
+}
+
+async fn fetch_monkeys(monkey: i32) -> i32 {
+    // maybe this didn't need to be async
+    TimeoutFuture::new(2_000).await;
+    monkey * 2
+}
+
+async fn important_api_call(id: usize) -> String {
+    TimeoutFuture::new(1_000).await;
+    match id {
+        0 => "Alice",
+        1 => "Bob",
+        2 => "Carol",
+        _ => "User not found",
+    }
+    .to_string()
+}
 
 #[component]
 fn SizeOf<T: Sized>(#[prop(optional)] _ty: PhantomData<T>) -> impl IntoView {
@@ -258,7 +294,7 @@ fn NameSetter() -> impl IntoView {
 
 #[component]
 fn CreateEffect() -> impl IntoView {
-    let (a, set_a) = create_signal(1);
+    let (a, _set_a) = create_signal(1);
     let (b, set_b) = create_signal(0);
 
     create_effect(move |_| {
@@ -291,8 +327,45 @@ fn Watch() -> impl IntoView {
 
 #[component]
 fn App() -> impl IntoView {
-    let (count, set_count) = create_signal(0);
+    let (count, set_count) = create_signal(1);
     let double_count = move || count.get() * 2;
+
+    let (count1, _set_count1) = create_signal(2);
+    let (count2, _set_count2) = create_signal(3);
+
+    let (tab, set_tab) = create_signal(0);
+
+    // this will reload every time `tab` changes
+    let user_data = create_resource(move || tab.get(), |tab| async move { important_api_call(tab).await });
+
+    let a =create_resource(
+        move || count1.get(),
+        |count| async move {load_a(count).await}
+    );
+    let b =create_resource(
+        move || count2.get(),
+        |count| async move {load_b(count).await}
+    );
+
+
+
+    let async_data = create_resource(
+        move || count.get(),
+        |value| async move { load_data(value).await },
+    );
+    logging::log!("async_data :=> {:?}", async_data);
+
+    let async_result = move || {
+        async_data
+            .get()
+            .map(|value| format!("Server returned {value:?}"))
+            .unwrap_or_else(|| "Loading...".into())
+    };
+    logging::log!("async_result :=> {:?}", async_result());
+
+    let loading = async_data.loading();
+    logging::log!("loading :=> {:?}", loading.get());
+    let is_loading = move || if loading.get() { "Loading..." } else { "Idle." };
 
     let values = vec![0, 1, 2];
 
@@ -320,6 +393,60 @@ fn App() -> impl IntoView {
     provide_context(set_toggled);
 
     view! {
+        <div class="buttons">
+            <button
+                on:click=move |_| set_tab.set(0)
+                class:selected=move || tab.get() == 0
+            >
+                "Tab A"
+            </button>
+            <button
+                on:click=move |_| set_tab.set(1)
+                class:selected=move || tab.get() == 1
+            >
+                "Tab B"
+            </button>
+            <button
+                on:click=move |_| set_tab.set(2)
+                class:selected=move || tab.get() == 2
+            >
+                "Tab C"
+            </button>
+            {move || if user_data.loading().get() {
+                "Loading..."
+            } else {
+                ""
+            }}
+        </div>
+        <Transition
+            // the fallback will show initially
+            // on subsequent reloads, the current child will
+            // continue showing
+            fallback=move || view! { <p>"Loading..."</p> }
+        >
+            <p>
+                {move || user_data.get()}
+            </p>
+        </Transition>
+        <h1>"My Data"</h1>
+        <Suspense
+            fallback=move || view! { <p>"Loading My Data..."</p> }
+        >
+            <h3>"A"</h3>
+            {move || {
+                 a.get().map(|a| view! { <p>"showing a" {a}</p>})
+             }}
+            <h3>"B"</h3>
+            {move || {
+                 b.get().map(|b| view! { <p>"showing b" {b}</p>})
+             }}
+        </Suspense>
+        <Await
+            future=|| fetch_monkeys(3)
+            let:data
+        >
+            <p>{*data} " little monkeys, jumping on the bed."</p>
+        </Await>
         <button
             on:click=move |_| {
                 set_count.update(|n| *n += 1);
@@ -337,6 +464,12 @@ fn App() -> impl IntoView {
         <ProgressBar progress=double_count />
         <p>
             {move || count.get()}
+        </p>
+        <p>
+            <code>"async_value"</code>": "
+            {async_result}
+            <br/>
+            {is_loading}
         </p>
         <SizeOf<usize>/>
         <SizeOf<String>/>

@@ -12,4 +12,4 @@ setup. Take a look at Leptos's [Getting Started Page](https://book.leptos.dev/ge
 
 **LEFT OFF:**
 
-Left Off [here](https://book.leptos.dev/async/10_resources.html).
+Left Off [here](https://book.leptos.dev/interlude_projecting_children.html).
