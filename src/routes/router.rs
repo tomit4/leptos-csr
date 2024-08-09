@@ -17,6 +17,7 @@ pub fn App() -> impl IntoView {
                         <Route path="" view=|| view!{<></>}/>
                     </Route>
                     <Route path="/search" view=Search/>
+                    <Route path="/stylers" view=Stylers/>
                     <Route path="/navigate" view=Navigate/>
                     <Route path="/*any" view=|| view!{<h1>404</h1>}/>
                 </Routes>

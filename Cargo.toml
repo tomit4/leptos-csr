@@ -8,3 +8,4 @@ console_error_panic_hook = "0.1.7"
 gloo-timers = { version = "0.3.0", features=["futures"]}
 leptos = { version = "0.6.13", features = ["csr"] }
 leptos_router = { version = "0.6.13", features = ["csr"] }
+stylance = "0.5.1"
