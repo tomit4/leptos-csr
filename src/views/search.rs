@@ -49,18 +49,14 @@ pub fn Search() -> impl IntoView {
 pub fn FormExample(query: String) -> impl IntoView {
     let search_results = create_resource(move || query.clone(), fetch_results);
 
-    let value = move || {
-        search_results
-            .get()
-            .unwrap_or_else(|| "".to_string())
-    };
+    let value = move || search_results.get().unwrap_or_else(|| "".to_string());
 
     view! {
         // NOTE: A little janky, adjusts the search term, but doesn't submit it really..
         <Form method="GET" action="">
-            <input 
-                type="search" 
-                name="q" 
+            <input
+                type="search"
+                name="q"
                 value={value}
             />
             <input type="submit"/>
